@@ -1,6 +1,8 @@
 #!/bin/bash
 
 ## PosixAccount & PosixGroup Add for samba4 
+## Tested On CentOS/RHEL
+## Author :- Rahul Patil
 
 # Change Samba4 binary location if needed 
 export PATH=$PATH:/usr/local/samba/bin/
@@ -9,6 +11,9 @@ export PATH=$PATH:/usr/local/samba/bin/
 DN='DC=linuxian,DC=loc'
 Host='localhost'
 pass='admin@123'		# leave blank if you want interactive password prompt 
+
+## Check 1# ldapmodify installed or not 
+[[ -x $(command -v ldapmodify) ]] || { echo "Please Install Openldap-clients"; exit 1; };
 
 # temp data
 ldiftmp=$(mktemp)
@@ -47,18 +52,18 @@ s4group(){
 	gid=$(wbinfo --group-info=$1 | cut -d":" -f 3)
 	
 	if ! search $1 test | grep -q posixGroup; then
-
-	cat <<-_EOF > $ldiftmp
-	dn: cn=$1,cn=Users,$DN
-	changetype: modify
-	add:objectclass
-	objectclass: posixGroup
-	-
-	add: gidnumber
-	gidnumber: $gid
-	_EOF
-	modify
-	search $1
+	
+		cat <<-_EOF > $ldiftmp
+		dn: cn=$1,cn=Users,$DN
+		changetype: modify
+		add:objectclass
+		objectclass: posixGroup
+		-
+		add: gidnumber
+		gidnumber: $gid
+		_EOF
+		modify
+		search $1
 	else
 		echo "Group: $1 Already have PosixGroup Details"
 		echo "exit"
@@ -78,6 +83,7 @@ s4user(){
 	uid=$(wbinfo --user-info=$1 | cut -d":" -f 3)
 	HomeDir=$(wbinfo --user-info=$1 | cut -d":" -f 6)
 	checkgid=$(wbinfo --user-info=$1 | cut -d":" -f 4)
+	
 	if [[  $checkgid < 3000000 ]]; then
 		echo "It's seems Group is not define for this user"
 		read -p "Do you want to specify group (y/n)? " 
@@ -88,26 +94,26 @@ s4user(){
 	fi 
 	
 	if ! search $1 test | grep -q posixAccount; then
-	cat <<-_EOF > $ldiftmp
-	dn: cn=$1,cn=Users,$DN
-	changetype: modify
-	add:objectclass
-	objectclass: posixAccount
-	-
-	add: uidNumber
-	uidNumber: $uid
-	-
-	add: gidnumber
-	gidnumber: $gid
-	-
-	add: unixHomeDirectory
-	unixHomeDirectory: $HomeDir
-	-
-	add: loginShell
-	loginShell: /bin/bash
-	_EOF
-	modify
-	search $1
+		cat <<-_EOF > $ldiftmp
+		dn: cn=$1,cn=Users,$DN
+		changetype: modify
+		add:objectclass
+		objectclass: posixAccount
+		-
+		add: uidNumber
+		uidNumber: $uid
+		-
+		add: gidnumber
+		gidnumber: $gid
+		-
+		add: unixHomeDirectory
+		unixHomeDirectory: $HomeDir
+		-
+		add: loginShell
+		loginShell: /bin/bash
+		_EOF
+		modify
+		search $1
 	else 
 		echo "User: $1 already have PosixAccount Detials"
 		echo "exit"
@@ -116,9 +122,10 @@ s4user(){
 }
 
 [[ $# < 2 ]] && { show_help; exit 1; };
+
 case $1 in 
-	-u|-U) s4user $2  ;;
-	-g|-G) s4group $2 ;;
+	-u|-U) s4user $2  	;;
+	-g|-G) s4group $2 	;;
 	*)	show_help	;;
 esac
 
