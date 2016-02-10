@@ -1,6 +1,6 @@
 # Get All AD Users into LDIF File
-ldapsearch -xb 'dc=oldserver' -LLL  -D 'administrator@oldserver' -W '(&(objectClass=user)(!(objectClass=computer)))' \
-	dn objectClass cn givenName sAMAccountName userAccountControl userPrincipalName description -h 192.168.50.200    > users_win2k8.ldif
+ldapsearch -xb 'dc=rnao,dc=org' -LLL -D "administrator@rnao.org" -W '(&(objectClass=user)(&(objectClass=computer)))' \
+  dn objectClass cn givenName sAMAccountName userAccountControl userPrincipalName description -h 192.168.2.3 > users_win2k3.ldif
 
 # Change DC Name
 sed -i 's/DC=oldserver/DC=newserver,DC=linux/g' users_win2k8.ldif
